@@ -1,0 +1,6 @@
+"Konto_AccountNo";"Konto_RoutingNo";"Konto_Id";"Umsatz_Id";"Empfaenger_Konto";"Empfaenger_Blz";"Empfaenger_Name";"Betrag";"Zweck";"Zweck2";"Zweck3";"Datum";"Valuta";"Kommentar";"Checksum";"GvCode";"EndToEndId";"MandateId";"PrimaNota";"Art";"CustomerRef";"AddKey";"TxId";"PurposeCode";"Empfaenger_Name2";"UmsatzTyp_Name"
+#foreach($umsatz in $objects)
+#if(!$umsatz.hasFlag(2))
+"$!{umsatz.Konto.Kontonummer}";"$!{umsatz.Konto.Bic}";"$!{umsatz.Konto.ID}";"$!{umsatz.ID}";"$!{umsatz.GegenkontoNummer}";"$!{umsatz.GegenkontoBLZ}";"$!{umsatz.GegenkontoName}";"$!{decimalformat.format(${umsatz.Betrag})}";"$!{umsatz.Zweck}";"$!{umsatz.Zweck2}";"$!{umsatz.getAttribute("zweck3")}";"$!{dateformat.format(${umsatz.Datum})}";"$!{dateformat.format(${umsatz.Valuta})}";"$!{umsatz.Kommentar}";"$!{umsatz.Checksum}";"$!{umsatz.GvCode}";"$!{umsatz.EndToEndId}";"$!{umsatz.MandateId}";"$!{umsatz.Primanota}";"$!{umsatz.Art}";"$!{umsatz.CustomerRef}";"$!{umsatz.AddKey}";"$!{umsatz.TransactionId}";"$!{umsatz.PurposeCode}";"$!{umsatz.GegenkontoName2}";"$!{umsatz.UmsatzTyp.Name}"
+#end
+#end
