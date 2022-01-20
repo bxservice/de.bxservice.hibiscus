@@ -332,24 +332,31 @@ public class HibiscusLoader implements BankStatementLoaderInterface {
 				// Verify that bank account was found
 				if (ibs.getC_BankAccount_ID() <= 0) {
 					m_errorMessage = new StringBuffer("LoadError");
-					m_errorDescription = new StringBuffer("Bank Not Found Account=").append(v_Konto_AccountNo).append(", Routing=").append(v_Konto_RoutingNo);
+					m_errorDescription = new StringBuffer(Msg.getMsg(Env.getCtx(), "BXS_BankNotFound", new Object[] {v_Konto_AccountNo, v_Konto_RoutingNo}));
 					return false;
 				}
 				MBankAccount ba = MBankAccount.get(ibs.getC_BankAccount_ID());
 				// verify there is no record with same Umsatz_Id (Line) in I_BankStatement or C_BankStatementLine
 				if (MSysConfig.getBooleanValue("BXS_HIBISCUS_VALIDATE_DUPS_UMSATZID", true, Env.getAD_Client_ID(Env.getCtx()))) {
-					final String sqlcntibs = "SELECT COUNT(*) FROM I_BankStatement WHERE Line=? AND C_BankAccount_ID=? AND I_BankStatement_ID!=?";
-					int cntibs = DB.getSQLValueEx(m_bsl.get_TrxName(), sqlcntibs, v_Umsatz_Id, ba.getC_BankAccount_ID(), ibs.getI_BankStatement_ID());
+					final String sqlcntibs =
+							"SELECT COUNT(*) "
+							+ "FROM I_BankStatement "
+							+ "WHERE EftTrxID=? AND C_BankAccount_ID=? AND I_BankStatement_ID!=?";
+					int cntibs = DB.getSQLValueEx(m_bsl.get_TrxName(), sqlcntibs, m_line.trxID, ba.getC_BankAccount_ID(), ibs.getI_BankStatement_ID());
 					if (cntibs > 0) {
 						m_errorMessage = new StringBuffer("LoadError");
-						m_errorDescription = new StringBuffer("The line ").append(v_Umsatz_Id).append(" was already loaded in I_BankStatementLine");
+						m_errorDescription = new StringBuffer(Msg.getMsg(Env.getCtx(), "BXS_UmsatzIdAlreadyInImport", new Object[] {m_line.trxID}));
 						return false;
 					}
-					final String sqlcntbs = "SELECT Name FROM C_BankStatementLine bsl JOIN C_BankStatement bs ON (bsl.C_BankStatement_ID=bs.C_BankStatement_ID) WHERE bsl.Line=? AND bs.C_BankAccount_ID=?";
-					String bsname = DB.getSQLValueStringEx(m_bsl.get_TrxName(), sqlcntbs, v_Umsatz_Id, ba.getC_BankAccount_ID());
+					final String sqlcntbs =
+							"SELECT Name "
+							+ "FROM C_BankStatementLine bsl "
+							+ "JOIN C_BankStatement bs ON (bsl.C_BankStatement_ID=bs.C_BankStatement_ID) "
+							+ "WHERE bsl.EftTrxID=? AND bs.C_BankAccount_ID=? AND bs.DocStatus NOT IN ('RE','VO')";
+					String bsname = DB.getSQLValueStringEx(m_bsl.get_TrxName(), sqlcntbs, m_line.trxID, ba.getC_BankAccount_ID());
 					if (bsname != null) {
 						m_errorMessage = new StringBuffer("LoadError");
-						m_errorDescription = new StringBuffer("The line ").append(v_Umsatz_Id).append(" was already loaded in Bank Statement ").append(bsname);
+						m_errorDescription = new StringBuffer(Msg.getMsg(Env.getCtx(), "BXS_UmsatzIdAlreadyInStatement", new Object[] {m_line.trxID, bsname}));
 						return false;
 					}
 				}
@@ -359,9 +366,7 @@ public class HibiscusLoader implements BankStatementLoaderInterface {
 							v_Empfaenger_Blz, v_Empfaenger_Konto, v_Empfaenger_Name, v_PrimaNota, mergedzweck.toString(), v_Datum,
 							v_Valuta);
 					if (calcCheckssum != v_Checksum.longValue()) {
-						m_errorDescription = new StringBuffer("The checksum for line ").append(v_Umsatz_Id)
-								.append(" doesn't match, calculated=").append(calcCheckssum).append(", expected=")
-								.append(v_Checksum.longValue());
+						m_errorDescription = new StringBuffer(Msg.getMsg(Env.getCtx(), "BXS_UmsatzIdNoMatchChecksum", new Object[] {m_line.trxID, String.valueOf(calcCheckssum), String.valueOf(v_Checksum.longValue())}));
 						if (MSysConfig.getBooleanValue("BXS_HIBISCUS_FORCE_CHECKSUM", false, Env.getAD_Client_ID(Env.getCtx()))) {
 							m_errorMessage = new StringBuffer("LoadError");
 							return false;
