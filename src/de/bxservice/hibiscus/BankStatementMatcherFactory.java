@@ -32,8 +32,11 @@ public class BankStatementMatcherFactory implements IBankStatementMatcherFactory
 	@Override
 	public BankStatementMatcherInterface newBankStatementMatcherInstance(String className) {
 
-		if (HibiscusMatcherInvoiceInMemo.class.getName().equals(className))
-			return new HibiscusMatcherInvoiceInMemo();
+		if (HibiscusMatcherCustomerInvoiceInMemo.class.getName().equals(className))
+			return new HibiscusMatcherCustomerInvoiceInMemo();
+
+		if (HibiscusMatcherVendorSEPAPayment.class.getName().equals(className))
+			return new HibiscusMatcherVendorSEPAPayment();
 
 		return null;
 

@@ -50,7 +50,7 @@ import org.compiere.util.Msg;
  * 
  * @author Carlos Ruiz - globalqss - BX Service
  */
-public class HibiscusMatcherInvoiceInMemo implements BankStatementMatcherInterface {
+public class HibiscusMatcherCustomerInvoiceInMemo implements BankStatementMatcherInterface {
 
 	/**	Logger							*/
 	protected CLogger			log = CLogger.getCLogger (getClass());
@@ -63,58 +63,52 @@ public class HibiscusMatcherInvoiceInMemo implements BankStatementMatcherInterfa
 	@Override
 	public BankStatementMatchInfo findMatch(MBankStatementLine bsl) {
 		BankStatementMatchInfo bsi = new BankStatementMatchInfo();
-		if (bsl.getTrxAmt().signum() != 0)
+		if (bsl.getTrxAmt().signum() > 0)
 			matchInvoiceInMemo(bsi, bsl);
 		return bsi;
 	}
 
 	private void matchInvoiceInMemo(BankStatementMatchInfo bsi, MBankStatementLine bsl) {
 
-		if (bsl.getTrxAmt().signum() > 0) {
-
-			// match customer invoices
-			List<String> potentialInvoices = searchInvoiceInMemo(bsl.getEftMemo());
-			List<MInvoice> invoices = new ArrayList<MInvoice>();
-			for (String potentialInvoice : potentialInvoices) {
-				MInvoice invoice = new Query(bsl.getCtx(), MInvoice.Table_Name, "DocumentNo=? AND IsSOTrx='Y' AND DocStatus IN ('CO','CL','WP')", bsl.get_TrxName())
-						.setOnlyActiveRecords(true)
-						.setClient_ID()
-						.setParameters(potentialInvoice)
-						.first();
-				if (invoice != null && invoice.getOpenAmt().signum() > 0)
-					invoices.add(invoice);
-			}
-			if (invoices.size() > 0) {
-				String msg = null;
-				MInvoice firstInvoice = invoices.get(0);
-				bsi.setC_BPartner_ID(firstInvoice.getC_BPartner_ID());
-				if (invoices.size() == 1) {
-					// found one invoice
-					if (bsl.getTrxAmt().compareTo(firstInvoice.getOpenAmt()) == 0) {
-						bsi.setC_Invoice_ID(firstInvoice.getC_Invoice_ID());
-						msg = Msg.getMsg(bsl.getCtx(), "BXS_ExactMatch");
-					} else {
-						DecimalFormat df = DisplayType.getNumberFormat(DisplayType.Amount);
-						String openAmt = df.format(firstInvoice.getOpenAmt());
-						msg = Msg.getMsg(bsl.getCtx(), "BXS_MatchInvoiceNotAmount", new Object[] {firstInvoice.getDocumentNo(), openAmt});
-					}
-				} else {
-					// multiple invoices, a payment with multiple allocations must be created
-					StringBuilder invoicesStr = new StringBuilder();
-					for (MInvoice invoice : invoices) {
-						if (invoicesStr.length() > 0)
-							invoicesStr.append(", ");
-						invoicesStr.append(invoice.getDocumentNo());
-					}
-					msg = Msg.getMsg(bsl.getCtx(), "BXS_MultiInvoiceMatch", new Object[] {invoicesStr.toString()});
-				}
-				addDescription(bsl, msg);
-			}
-
-		} else if (bsl.getTrxAmt().signum() < 0) {
-			// TODO: match a vendor payment
-
+		// match customer invoices
+		List<String> potentialInvoices = searchInvoiceInMemo(bsl.getEftMemo());
+		List<MInvoice> invoices = new ArrayList<MInvoice>();
+		for (String potentialInvoice : potentialInvoices) {
+			MInvoice invoice = new Query(bsl.getCtx(), MInvoice.Table_Name, "DocumentNo=? AND IsSOTrx='Y' AND DocStatus IN ('CO','CL','WP')", bsl.get_TrxName())
+					.setOnlyActiveRecords(true)
+					.setClient_ID()
+					.setParameters(potentialInvoice)
+					.first();
+			if (invoice != null && invoice.getOpenAmt().signum() > 0)
+				invoices.add(invoice);
 		}
+		if (invoices.size() > 0) {
+			String msg = null;
+			MInvoice firstInvoice = invoices.get(0);
+			bsi.setC_BPartner_ID(firstInvoice.getC_BPartner_ID());
+			if (invoices.size() == 1) {
+				// found one invoice
+				if (bsl.getTrxAmt().compareTo(firstInvoice.getOpenAmt()) == 0) {
+					bsi.setC_Invoice_ID(firstInvoice.getC_Invoice_ID());
+					msg = Msg.getMsg(bsl.getCtx(), "BXS_ExactMatch");
+				} else {
+					DecimalFormat df = DisplayType.getNumberFormat(DisplayType.Amount);
+					String openAmt = df.format(firstInvoice.getOpenAmt());
+					msg = Msg.getMsg(bsl.getCtx(), "BXS_MatchInvoiceNotAmount", new Object[] {firstInvoice.getDocumentNo(), openAmt});
+				}
+			} else {
+				// multiple invoices, a payment with multiple allocations must be created
+				StringBuilder invoicesStr = new StringBuilder();
+				for (MInvoice invoice : invoices) {
+					if (invoicesStr.length() > 0)
+						invoicesStr.append(", ");
+					invoicesStr.append(invoice.getDocumentNo());
+				}
+				msg = Msg.getMsg(bsl.getCtx(), "BXS_MultiInvoiceMatch", new Object[] {invoicesStr.toString()});
+			}
+			addDescription(bsl, msg);
+		}
+
 	}
 
 	private void addDescription(MBankStatementLine bsl, String msg) {
@@ -155,9 +149,9 @@ public class HibiscusMatcherInvoiceInMemo implements BankStatementMatcherInterfa
 		Pattern p = Pattern.compile(pattern);
 		Matcher m = p.matcher(eftMemo);
 		while (m.find()) {
-		    String matched = m.group(1);
-		    if (! invoiceArray.contains(matched))
-		    	invoiceArray.add(matched);
+			String matched = m.group(1);
+			if (! invoiceArray.contains(matched))
+				invoiceArray.add(matched);
 		}
 	}
 
