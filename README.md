@@ -8,3 +8,9 @@
 
 * Replace the file de.willuhn.jameica.hbci.rmi.Umsatz.csv.vm in folder $HOME/.jameica/plugins/hibiscus/lib/velocity
     * This file is overwritten on every Hibiscus update, so it must be copied again after updating.
+
+* Bank Statement Matcher for Customer Invoices in Memo field, as expected when importing from Hibiscus with this plugin
+    * Class de.bxservice.hibiscus.HibiscusMatcherCustomerInvoiceInMemo
+
+* Bank Statement Matcher for Vendor SEPA Payments, as expected when importing from Hibiscus with this plugin, payments generated using the [de.bxservice.sepa plugin](https://github.com/bxservice/de.bxservice.sepa)
+    * Class de.bxservice.hibiscus.HibiscusMatcherVendorSEPAPayment
