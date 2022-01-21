@@ -1,6 +1,7 @@
 [BX Service GmbH](https://www.bx-service.com/) bank interface with [Hibiscus](https://www.willuhn.de/)
 
 * Bank statement loader importer for [iDempiere](https://github.com/idempiere/idempiere) Open Source ERP.
+    * Class de.bxservice.hibiscus.HibiscusMatcherVendorSEPAPayment
 
 * Import files from a modified CSV format from [Hibiscus](https://www.willuhn.de/) containing all information from the table umsatz
 
@@ -14,3 +15,6 @@
 
 * Bank Statement Matcher for Vendor SEPA Payments, as expected when importing from Hibiscus with this plugin, payments generated using the [de.bxservice.sepa plugin](https://github.com/bxservice/de.bxservice.sepa)
     * Class de.bxservice.hibiscus.HibiscusMatcherVendorSEPAPayment
+
+
+**Functional Documentation:** [iDempiere Plugin: BX Service Hibiscus](https://wiki.idempiere.org/en/Plugin:_BX_Service_SEPA)
