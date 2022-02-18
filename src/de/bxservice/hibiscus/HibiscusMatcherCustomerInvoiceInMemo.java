@@ -64,14 +64,14 @@ public class HibiscusMatcherCustomerInvoiceInMemo implements BankStatementMatche
 	public BankStatementMatchInfo findMatch(MBankStatementLine bsl) {
 		BankStatementMatchInfo bsi = new BankStatementMatchInfo();
 		if (bsl.getTrxAmt().signum() > 0)
-			matchInvoiceInMemo(bsi, bsl);
+			matchInvoice(bsi, bsl);
 		return bsi;
 	}
 
-	private void matchInvoiceInMemo(BankStatementMatchInfo bsi, MBankStatementLine bsl) {
+	private void matchInvoice(BankStatementMatchInfo bsi, MBankStatementLine bsl) {
 
 		// match customer invoices
-		List<String> potentialInvoices = searchInvoiceInMemo(bsl.getEftMemo());
+		List<String> potentialInvoices = searchInvoiceIn(bsl.getEftMemo() + " " + bsl.getEftReference());
 		List<MInvoice> invoices = new ArrayList<MInvoice>();
 		for (String potentialInvoice : potentialInvoices) {
 			MInvoice invoice = new Query(bsl.getCtx(), MInvoice.Table_Name, "DocumentNo=? AND IsSOTrx='Y' AND DocStatus IN ('CO','CL','WP')", bsl.get_TrxName())
@@ -126,7 +126,7 @@ public class HibiscusMatcherCustomerInvoiceInMemo implements BankStatementMatche
 	 * @param eftMemo The memo field filled with Hibiscus Zweck+Zweck2+Zweck3
 	 * @param trxAmt The transaction amount of the statement line
 	 */
-	private List<String> searchInvoiceInMemo(String eftMemo) {
+	private List<String> searchInvoiceIn(String eftMemo) {
 		List<String> invoiceArray = new ArrayList<String>();
 		// Example for BXS_SALES_INVOICE_MATCH_REGEX
 		// If the invoice number is expected to be 12 digits starting with 4802 the regex would be: (4802[0-9]{8})
