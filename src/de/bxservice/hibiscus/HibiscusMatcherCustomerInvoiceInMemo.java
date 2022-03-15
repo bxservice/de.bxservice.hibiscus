@@ -25,6 +25,7 @@
 
 package de.bxservice.hibiscus;
 
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,13 +89,15 @@ public class HibiscusMatcherCustomerInvoiceInMemo implements BankStatementMatche
 			bsi.setC_BPartner_ID(firstInvoice.getC_BPartner_ID());
 			if (invoices.size() == 1) {
 				// found one invoice
-				if (bsl.getTrxAmt().compareTo(firstInvoice.getOpenAmt()) == 0) {
+	            BigDecimal discount = firstInvoice.getDiscountAmt(bsl.getValutaDate());
+	            BigDecimal openAmt = firstInvoice.getOpenAmt().subtract(discount);
+				if (bsl.getTrxAmt().compareTo(openAmt) == 0) {
 					bsi.setC_Invoice_ID(firstInvoice.getC_Invoice_ID());
 					msg = Msg.getMsg(bsl.getCtx(), "BXS_ExactMatch");
 				} else {
 					DecimalFormat df = DisplayType.getNumberFormat(DisplayType.Amount);
-					String openAmt = df.format(firstInvoice.getOpenAmt());
-					msg = Msg.getMsg(bsl.getCtx(), "BXS_MatchInvoiceNotAmount", new Object[] {firstInvoice.getDocumentNo(), openAmt});
+					String amount = df.format(openAmt);
+					msg = Msg.getMsg(bsl.getCtx(), "BXS_MatchInvoiceNotAmount", new Object[] {firstInvoice.getDocumentNo(), amount});
 				}
 			} else {
 				// multiple invoices, a payment with multiple allocations must be created
