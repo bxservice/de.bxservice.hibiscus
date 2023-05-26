@@ -26,6 +26,8 @@
 package de.bxservice.hibiscus;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.compiere.impexp.BankStatementMatchInfo;
 import org.compiere.impexp.BankStatementMatcherInterface;
@@ -74,23 +76,34 @@ public class HibiscusMatcherVendorSEPAPayment implements BankStatementMatcherInt
 		//   EftReference -> EndToEndId (separated by /)
 		//   RmtInf/Ustrd -> with more information about order/date/invoice
 		int daysRange = MSysConfig.getIntValue("BXS_DATE_RANGE_MATCHER", 0, bsl.getAD_Client_ID());
+		StringBuilder whereClause = new StringBuilder(
+				"C_Payment.IsReceipt='N' "
+				+ "AND C_Payment.IsReconciled='N' "
+				+ "AND C_Payment.DocStatus IN ('CO','CL') "
+				+ "AND C_Payment.PayAmt=? "
+				+ "AND bpb.IBAN=? "
+				+ "AND (C_Payment.DateTrx BETWEEN ? AND ? OR C_Payment.DateTrx BETWEEN ? AND ?)");
 		Timestamp valutaFrom = TimeUtil.addDays(bsl.getValutaDate(), -daysRange);
 		Timestamp valutaTo = TimeUtil.addDays(bsl.getValutaDate(), daysRange);
 		Timestamp datumFrom = TimeUtil.addDays(bsl.getStatementLineDate(), -daysRange);
 		Timestamp datumTo = TimeUtil.addDays(bsl.getStatementLineDate(), daysRange);
-		final String whereClause =
-				"C_Payment.IsReceipt='N' "
-						+ "AND C_Payment.IsReconciled='N' "
-						+ "AND C_Payment.DocStatus IN ('CO','CL') "
-						+ "AND C_Payment.PayAmt=? "
-						+ "AND bp.Name=? "
-						+ "AND bpb.IBAN=? "
-						+ "AND (C_Payment.DateTrx BETWEEN ? AND ? OR C_Payment.DateTrx BETWEEN ? AND ?)";
-		MPayment payment = new Query(bsl.getCtx(), MPayment.Table_Name, whereClause, bsl.get_TrxName())
+		List<Object> params = new ArrayList<Object>();
+		params.add(bsl.getTrxAmt().negate());
+		params.add(bsl.getEftPayeeAccount());
+		params.add(datumFrom);
+		params.add(datumTo);
+		params.add(valutaFrom);
+		params.add(valutaTo);
+		boolean matchBPName = MSysConfig.getBooleanValue("BXS_MATCH_BP_NAME", false, bsl.getAD_Client_ID());
+		if (matchBPName) {
+			whereClause.append(" AND bp.Name=?");
+			params.add(bsl.getEftPayee());
+		}
+		MPayment payment = new Query(bsl.getCtx(), MPayment.Table_Name, whereClause.toString(), bsl.get_TrxName())
 				.addJoinClause("JOIN C_BPartner bp ON (C_Payment.C_BPartner_ID=bp.C_BPartner_ID)")
 				.addJoinClause("JOIN C_BP_BankAccount bpb ON (bp.C_BPartner_ID=bpb.C_BPartner_ID)")
 				.setOrderBy(MPayment.COLUMNNAME_C_Payment_ID)
-				.setParameters(bsl.getTrxAmt().negate(), bsl.getEftPayee(), bsl.getEftPayeeAccount(), datumFrom, datumTo, valutaFrom, valutaTo)
+				.setParameters(params)
 				.first();
 		if (payment != null) {
 			bsi.setC_Payment_ID(payment.getC_Payment_ID());
