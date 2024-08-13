@@ -132,7 +132,8 @@ public class HibiscusLoader implements BankStatementLoaderInterface {
 	// | Other Fields            | FileName         | EftStatementReference |
 	// |                         +------------------+-----------------------+
 	// |                         | Load Timestamp   | Name                  |
-	// |                         |                  | StatementDate         |
+	// |                         +------------------+-----------------------+
+	// |                         | First Datum      | StatementDate         |
 	// |                         +------------------+-----------------------+
 	// |                         | SysConfig        | Description           |
 	// +-------------------------+------------------+-----------------------+
@@ -202,10 +203,12 @@ public class HibiscusLoader implements BankStatementLoaderInterface {
 			statementRef = statementRef.substring(last+1);
 		Timestamp loadTS = new Timestamp(System.currentTimeMillis());
 		String statementName = loadTS.toString();
+		Timestamp firstDateLine = null;
 
 		CsvPreference csvpref = CsvPreference.EXCEL_NORTH_EUROPE_PREFERENCE;
 		Charset charset = Charset.forName("UTF-8");
 		ICsvMapReader mapReader = null;
+		FileInputStream fileInputStream = null;
 		int cnt = 1;
 		try {
 
@@ -237,7 +240,7 @@ public class HibiscusLoader implements BankStatementLoaderInterface {
 					new Optional() // UmsatzTyp_Name
 			};
 
-			FileInputStream fileInputStream = new FileInputStream(new File(m_bsl.getLocalFileName()));
+			fileInputStream = new FileInputStream(new File(m_bsl.getLocalFileName()));
 			mapReader = new CsvMapReader(new InputStreamReader(fileInputStream, charset), csvpref);
 			final String[] header = mapReader.getHeader(true);
 			Map<String, Object> values;
@@ -320,13 +323,15 @@ public class HibiscusLoader implements BankStatementLoaderInterface {
 					return false;
 
 				X_I_BankStatement ibs = m_bsl.getLastSavedLine();
+				if (firstDateLine == null)
+					firstDateLine = ibs.getStatementLineDate();
 				ibs.setMemo(memo2.toString());
 				ibs.setLineDescription(v_Kommentar);
 				ibs.setEftTrxType(v_GvCode);
 				ibs.setReferenceNo(v_MandateId);
 				ibs.setName(statementName);
 				ibs.setDescription(MSysConfig.getValue("BXS_HIBISCUS_STATEMENT_DESCRIPTION", "Uploaded via de.bxservice.hibiscus.HibiscusLoader", Env.getAD_Client_ID(Env.getCtx())));
-				ibs.setStatementDate(loadTS);
+				ibs.setStatementDate(firstDateLine);
 				ibs.saveEx();
 
 				// Verify that bank account was found
@@ -390,6 +395,13 @@ public class HibiscusLoader implements BankStatementLoaderInterface {
 			if (mapReader != null) {
 				try {
 					mapReader.close();
+				} catch (IOException e) {
+					throw new AdempiereException(e);
+				}
+			}
+			if (fileInputStream != null) {
+				try {
+					fileInputStream.close();
 				} catch (IOException e) {
 					throw new AdempiereException(e);
 				}
