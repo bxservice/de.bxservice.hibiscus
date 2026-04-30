@@ -17,4 +17,4 @@
     * Class de.bxservice.hibiscus.HibiscusMatcherVendorSEPAPayment
 
 
-**Functional Documentation:** [iDempiere Plugin: BX Service Hibiscus](https://wiki.idempiere.org/en/Plugin:_BX_Service_SEPA)
+**Functional Documentation:** [iDempiere Plugin: BX Service Hibiscus](https://wiki.idempiere.org/en/Plugin:_BX_Service_Hibiscus)
