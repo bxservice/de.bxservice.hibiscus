@@ -286,7 +286,8 @@ public class HibiscusLoader implements BankStatementLoaderInterface {
 				m_line.payeeName = v_Empfaenger_Name;
 				m_line.stmtAmt = v_Betrag;
 				m_line.trxAmt = v_Betrag;
-				m_line.statementLineDate = new Timestamp(v_Datum.getTime());
+				// Set statement line date = valuta date because create payments calculates the discount based on the statement line date 
+				m_line.statementLineDate = v_Valuta != null ? new Timestamp(v_Valuta.getTime()) : new Timestamp(v_Datum.getTime());
 				m_line.valutaDate = new Timestamp(v_Valuta.getTime());
 				m_line.trxType = String.valueOf(v_Checksum);
 				m_line.reference = v_EndToEndId;
